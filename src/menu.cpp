@@ -282,7 +282,7 @@ void Render() {
         // ========== INFO TAB ==========
         else if (active_tab == 2) {
             ImGui::TextUnformatted("u3ware overlay");
-            ImGui::TextDisabled("Build 1.1.0");
+            ImGui::TextDisabled("Build 1.2.0");
             ImGui::Separator();
             ImGui::TextUnformatted("Status:");
             ImGui::SameLine();
