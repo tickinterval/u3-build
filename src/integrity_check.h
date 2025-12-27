@@ -30,3 +30,4 @@ bool VerifyAll(HMODULE module);
 
 } // namespace integrity_check
 
+

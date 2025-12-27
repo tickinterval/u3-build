@@ -275,8 +275,12 @@ static DWORD WINAPI HeartbeatThread(LPVOID param) {
             
             // После MAX_FAIL_COUNT неудач подряд - считаем что что-то не так
             if (failCount >= MAX_FAIL_COUNT) {
-                // Можно добавить логику: например, отключить функционал
-                // Пока просто продолжаем пытаться
+                if (g_on_revoked) {
+                    g_on_revoked();
+                } else {
+                    DefaultOnRevoked();
+                }
+                return 0;
             }
         } else {
             failCount = 0;

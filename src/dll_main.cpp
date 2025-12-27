@@ -35,8 +35,10 @@ static void InitializeSystems() {
     protection::Initialize();
     
     // 2. Читаем конфигурацию из shared memory
+    bool allow_hooks = false;
     if (shared_config::ReadConfig(&g_config)) {
         g_config_loaded = true;
+        allow_hooks = true;
         
         // 3. Запускаем heartbeat если включён
         if (g_config.flags & CONFIG_FLAG_HEARTBEAT_ENABLED) {
@@ -60,7 +62,9 @@ static void InitializeSystems() {
     }
     
     // 4. Инициализация хуков DirectX
-    hooks::Init();
+    if (allow_hooks) {
+        hooks::Init();
+    }
 }
 
 // Shutdown
