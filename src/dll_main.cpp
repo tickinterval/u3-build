@@ -3,6 +3,8 @@
 #include "protection.h"
 #include "heartbeat.h"
 #include "shared_config.h"
+#include "integrity_check.h"
+#include "dynamic_imports.h"
 
 // Глобальная конфигурация
 static shared_config::SharedConfig g_config = {};
@@ -10,7 +12,26 @@ static bool g_config_loaded = false;
 
 // Инициализация всех систем
 static void InitializeSystems() {
-    // 1. Инициализация защиты (ВРЕМЕННО ОТКЛЮЧЕНА - слишком агрессивная)
+    // 0. Инициализация динамических импортов (скрытие IAT)
+    if (!dynamic_imports::Initialize()) {
+        ExitProcess(1);
+    }
+    
+    // 1. Проверка целостности DLL (CPUID, timestamp, адреса)
+    HMODULE currentModule = nullptr;
+    MEMORY_BASIC_INFORMATION mbi = {};
+    if (::VirtualQuery(&InitializeSystems, &mbi, sizeof(mbi))) {
+        currentModule = reinterpret_cast<HMODULE>(mbi.AllocationBase);
+    }
+    
+    if (currentModule) {
+        if (!integrity_check::VerifyAll(currentModule)) {
+            // Целостность не прошла - завершаем работу
+            ExitProcess(1);
+        }
+    }
+    
+    // 2. Инициализация защиты (ВРЕМЕННО ОТКЛЮЧЕНА - слишком агрессивная)
     protection::Initialize();
     
     // 2. Читаем конфигурацию из shared memory

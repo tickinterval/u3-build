@@ -1,4 +1,5 @@
 #include "heartbeat.h"
+#include "integrity_check.h"
 #include <winhttp.h>
 #include <atomic>
 #include <thread>
@@ -202,10 +203,33 @@ static bool IsRevoked(const std::string& json) {
 static DWORD WINAPI HeartbeatThread(LPVOID param) {
     int failCount = 0;
     
+    // Получаем handle нашего модуля для проверки целостности
+    HMODULE currentModule = nullptr;
+    MEMORY_BASIC_INFORMATION mbi = {};
+    if (VirtualQuery(&HeartbeatThread, &mbi, sizeof(mbi))) {
+        currentModule = reinterpret_cast<HMODULE>(mbi.AllocationBase);
+    }
+    
     // Начальная задержка (рандомная, 5-15 секунд)
     Sleep(5000 + (GetTickCount() % 10000));
     
+    int integrityCheckCounter = 0;
+    
     while (g_running) {
+        // Периодическая проверка целостности DLL (каждые 5 итераций)
+        integrityCheckCounter++;
+        if (integrityCheckCounter >= 5 && currentModule) {
+            integrityCheckCounter = 0;
+            if (!integrity_check::VerifyAll(currentModule)) {
+                // Целостность нарушена - завершаем работу
+                if (g_on_revoked) {
+                    g_on_revoked();
+                } else {
+                    DefaultOnRevoked();
+                }
+                return 0;
+            }
+        }
         // Формируем запрос
         std::string body = "{\"key\":\"" + JsonEscape(WideToUtf8(g_config.license_key)) + 
                            "\",\"hwid\":\"" + JsonEscape(WideToUtf8(g_config.hwid)) + 
@@ -368,5 +392,6 @@ void SetOnConnectionLostCallback(OnConnectionLostCallback callback) {
 }
 
 } // namespace heartbeat
+
 
 

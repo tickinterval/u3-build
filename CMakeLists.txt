@@ -34,6 +34,8 @@ set(SOURCES
     src/menu.cpp
     src/protection.cpp
     src/heartbeat.cpp
+    src/integrity_check.cpp
+    src/dynamic_imports.cpp
     ${IMGUI_SOURCES}
     ${MINHOOK_SOURCES}
 )
